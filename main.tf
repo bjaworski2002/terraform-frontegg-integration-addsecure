@@ -9,6 +9,7 @@ terraform {
   required_version = ">= 1.0.0"
 }
 
+
 provider "frontegg" {
   client_id       = var.client_id
   secret_key      = var.secret_key
@@ -70,12 +71,13 @@ locals {
 }
 
 resource "null_resource" "upload_permissions" {
+
   for_each = local.target_environments
 
   provisioner "local-exec" {
     command = <<-EOT
       python3 ${path.module}/scripts/set_permissions.py \
-        --client_id ${var.client_id} \
+        --client_id ${local.target_environments[each.key]} \
         --secret_key ${local.environment_secrets[each.key]} \
         --api_base_url ${var.api_base_url} \
         --environment_id ${each.value} \
