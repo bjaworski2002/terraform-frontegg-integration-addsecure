@@ -29,32 +29,42 @@ data "external" "dev_data" {
   }
 }
 
-# Decode permissions
 locals {
   all_dev_permissions = jsondecode(data.external.dev_data.result.permissions)
-  filtered_dev_permissions = [
-    for p in local.all_dev_permissions : p
-    if p["fePermission"] == false
-  ]
 }
 
 output "dev_permissions" {
-  description = "Filtered permissions fetched from the dev environment (no fePermission)"
-  value       = local.filtered_dev_permissions
+  description = "Filtered permissions fetched from the dev environment"
+  value       = local.all_dev_permissions
 }
 
 locals {
   all_dev_categories = jsondecode(data.external.dev_data.result.categories)
-  filtered_dev_categories = [
-    for c in local.all_dev_categories : c
-    if c["feCategory"] == false
-  ]
 }
 
 output "dev_categories" {
-  description = "Filtered categories fetched from the dev environment (feCategory == false)"
-  value       = local.filtered_dev_categories
+  description = "Filtered categories fetched from the dev environment"
+  value       = local.all_dev_categories
 }
+
+locals {
+  all_dev_roles = jsondecode(data.external.dev_data.result.roles)
+}
+
+output "dev_roles" {
+  description = "Filtered roles from dev environment"
+  value       = local.all_dev_roles
+}
+
+locals {
+  all_dev_features = jsondecode(data.external.dev_data.result.features)
+}
+
+output "dev_features" {
+  description = "Filtered features from dev environment"
+  value       = local.all_dev_features
+}
+
 
 locals {
   target_environments = {
@@ -81,8 +91,10 @@ resource "null_resource" "upload_permissions" {
         --secret_key ${local.environment_secrets[each.key]} \
         --api_base_url ${var.api_base_url} \
         --environment_id ${each.value} \
-        --categories_json '${jsonencode(local.filtered_dev_categories)}' \
-        --permissions_json '${jsonencode(local.filtered_dev_permissions)}'
+        --categories_json '${jsonencode(local.all_dev_categories)}' \
+        --permissions_json '${jsonencode(local.all_dev_permissions)}' \
+        --roles_json '${jsonencode(local.all_dev_roles)}' \
+        --features_json '${jsonencode(local.all_dev_features)}'
     EOT
   }
 }
